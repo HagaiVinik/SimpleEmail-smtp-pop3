@@ -20,7 +20,7 @@ class ServerSMTP_and_POP3:
         
     #--------------------smtp server functions---------------------
 
-    def send_by_smtp(self,s_smtp):    
+    def send_by_smtp(self,s_smtp):
         # wait for connection for the client
         conn, addr = s_smtp.accept()
 
@@ -50,7 +50,7 @@ class ServerSMTP_and_POP3:
         if request[:9]=='RCPT TO:<':
             Domains=(request[9:-3]).split(',')
             
-            print 'domains:',Domains
+            print('domains:',Domains)
             conn.sendall('250 OK')
             request = conn.recv(BUF_SIZE)
             if not request:
@@ -71,9 +71,9 @@ class ServerSMTP_and_POP3:
                 conn.close()
                 return
             BodyMail+=DATA
-        print '-----The all mail: -----'
-        print BodyMail
-        print '------------------------'
+        print('-----The all mail: -----')
+        print(BodyMail)
+        print('------------------------')
         self.SaveMailInDominsBoxes(BodyMail,Domains)
         conn.sendall('250 Ok')                
         request = conn.recv(BUF_SIZE)
@@ -105,21 +105,21 @@ class ServerSMTP_and_POP3:
                 f=open(PathMail,'wb')
                 f.write(BodyMail)
                 f.close()
-                print 'mail saved as: '+PathMail
+                print('mail saved as: '+PathMail)
             else:
-                print 'user domain not exist - so the mail not sent'
+                print('user domain not exist - so the mail not sent')
 
     def is_user_domain_exist_in_DB(self,UserName):
         if os.path.exists('users&passwords.txt'):
             f=open('users&passwords.txt','rb')
             d=ast.literal_eval(f.read()) #get all users
-            print d
+            print(d)
         else:
             d={}
         if UserName in d:
-            print 'yes'
+            print('yes')
             return True
-        print 'no'
+        print('no')
         return False
 
     #---------------------pop3 server functions--------------------
@@ -163,11 +163,11 @@ class ServerSMTP_and_POP3:
             return
         if x[:5]=='USER ' and len(x)>5:
             username=x[5:-2]
-            print username+' try get in'
+            print(username+' try get in')
             text,IsFound = self.find_user_in_DB(username)
             conn.sendall(text+'\r\n')
             if not IsFound:
-                print text
+                print(text)
                 return
         x = conn.recv(BUF_SIZE) #wait for client send password
         if not x:
@@ -186,9 +186,9 @@ class ServerSMTP_and_POP3:
             text,IsPass = self.is_password(username,password)
             conn.sendall(text+'\r\n')
             if not IsPass:
-                print text
+                print(text)
                 return
-        print username+' realy get in'
+        print(username+' realy get in')
         x = conn.recv(BUF_SIZE) #wait for client send command
         if not x:
             conn.close()
@@ -294,7 +294,7 @@ class ServerSMTP_and_POP3:
         s_smtp = socket.socket(socket.AF_INET,  socket.SOCK_STREAM)
         s_smtp.bind(ADDR_SMTP)
         s_smtp.listen(5)
-        print 'Server is Running @', ADDR_SMTP
+        print('Server is Running @', ADDR_SMTP)
         while True:
             self.send_by_smtp(s_smtp)
         s_smtp.close()
@@ -303,7 +303,7 @@ class ServerSMTP_and_POP3:
         s_pop3 = socket.socket(socket.AF_INET,  socket.SOCK_STREAM)
         s_pop3.bind(ADDR_POP3)
         s_pop3.listen(5)
-        print 'Server is Running @', ADDR_POP3
+        print('Server is Running @', ADDR_POP3)
         while True:
             self.send_by_pop3(s_pop3)
         s_pop3.close()
