@@ -12,7 +12,7 @@ ADDR_SMTP = (HOST, PORT_SMTP)
 ADDR_POP3 = (HOST, PORT_POP3)
 SERVERNAME='SN'
 BUF_SIZE = 4096
-USERS_PASSWORDS_FILE= r'../users&passwords.txt'
+USERS_PASSWORDS_FILE= 'users&passwords.txt'
 
 
 class ServerSMTP_and_POP3:
@@ -63,133 +63,179 @@ class ServerSMTP_and_POP3:
         if request.split()[0]!='HELO' and request.split()[0]!='EHLO':
             conn.close()
             return
-        conn.sendall('250 Hello '+request.split()[1]+' , I am glad to meet you')
-        request = conn.recv(BUF_SIZE)
+        hello_res = '250 Hello '+request.split()[1]+' , I am glad to meet you'
+
+        conn.sendall(hello_res.encode())
+
+        request = conn.recv(BUF_SIZE).decode()
+
         if not request:
             conn.close()
             return
         if request[:9]!='MAIL FROM':
             conn.close()
             return
-        UserSender=request[10:-1]
-        conn.sendall('250 Hello '+request.split()[1]+' , I am glad to meet you')
-        request = conn.recv(BUF_SIZE)
+
+        user_name = request[10:-1]
+        hello_res = '250 Hello ' + request.split()[1] + ' , I am glad to meet you'
+
+        conn.sendall(hello_res.encode())
+        request = conn.recv(BUF_SIZE).decode()
         if not request:
             conn.close()
             return
 
         if request[:9]=='RCPT TO:<':
             Domains=(request[9:-3]).split(',')
-            print('domains:',Domains)
-            conn.sendall('250 OK')
-            request = conn.recv(BUF_SIZE)
+
+            print('domains:', Domains)
+
+            ok_msg = '250 OK'
+            conn.sendall(ok_msg.encode())
+            request = conn.recv(BUF_SIZE).decode()
+
             if not request:
                 conn.close()
                 return
+
         if request[:4]!='DATA':
             conn.close()
             return
-        conn.sendall('354 End data with <CR><LF>.<CR><LF>')                
-        DATA = conn.recv(BUF_SIZE)
+
+        msg_354 = '354 End data with <CR><LF>.<CR><LF>'
+        conn.sendall(msg_354.encode())
+        DATA = conn.recv(BUF_SIZE).decode()
+
         if not DATA:
             conn.close()
             return
-        BodyMail=UserSender+DATA
+        BodyMail=user_name+DATA
+
         while DATA[-5:] !='\r\n.\r\n':
-            DATA = conn.recv(BUF_SIZE)
+            DATA = conn.recv(BUF_SIZE).decode()
             if not DATA:
+                print("error in parsing data from smtp client")
                 conn.close()
                 return
+
             BodyMail+=DATA
         print('-----The all mail: -----')
         print(BodyMail)
         print('------------------------')
+
         self.SaveMailInDominsBoxes(BodyMail, Domains)
-        conn.sendall('250 Ok')
-        request = conn.recv(BUF_SIZE)
+
+        ok_250 = '250 Ok'
+        conn.sendall(ok_250.encode())
+
+        request = conn.recv(BUF_SIZE).decode()
+
         if not request:
             conn.close()
             return
         if request[:4]!='QUIT':
             conn.close()
             return
-        conn.sendall('221 Bye')
+
+
+        bye_221 = '221 Bye'
+        conn.sendall(bye_221.encode())
         # close the connection to the specific client
         conn.close()
 
     def handle_pop3_client(self, conn, addr):
         # wait for connection for the client
 
-        x = conn.recv(BUF_SIZE) #wait for client send username
-        if not x:
+        client_msg = conn.recv(BUF_SIZE).decode() #wait for client send username
+        if not client_msg:
+            print("error in handle_pop3_client didn't receive client username")
             conn.close()
             return
-        if x[:5]!='USER ':
-            conn.sendall('data did not recieve correctly')
+        if client_msg[:5]!='USER ':
+            msg = 'data did not recieve correctly'
+            conn.sendall(msg.encode())
             conn.close()
             return
-        if len(x)<6:
-            conn.sendall('did not get the username')
+        if len(client_msg)<6:
+            msg = 'did not get the username'
+            conn.sendall(msg.encode())
             conn.close()
             return
-        if x[:5]=='USER ' and len(x)>5:
-            username=x[5:-2]
+        if client_msg[:5]=='USER ' and len(client_msg)>5:
+            username=client_msg[5:-2]
             print(username+' try get in')
             text,IsFound = self.find_user_in_DB(username)
-            conn.sendall(text+'\r\n')
+
+            text_msg = text+'\r\n'
+            text_msg.encode()
+            conn.sendall(text_msg)
+
             if not IsFound:
                 print(text)
                 return
-        x = conn.recv(BUF_SIZE) #wait for client send password
-        if not x:
+
+        client_msg = conn.recv(BUF_SIZE).decode() #wait for client send password
+        if not client_msg:
             conn.close()
             return
-        if x[:5]!='PASS ':
-            conn.sendall('-ERR data did not recieve correctly')
+        if client_msg[:5]!='PASS ':
+            err_msg = '-ERR data did not recieve correctly'
+            conn.sendall(err_msg.encode())
             conn.close()
             return
-        if len(x)<6:
-            conn.sendall('-ERR did not get the password')
+        if len(client_msg)<6:
+            err_msg = '-ERR did not get the password'
+            conn.sendall(err_msg.encode())
             conn.close()
             return
-        if x[:5]=='PASS ' and len(x)>5:
-            password=x[5:-2]
+        if client_msg[:5]=='PASS ' and len(client_msg)>5:
+            password=client_msg[5:-2]
             text,IsPass = self.is_password(username,password)
-            conn.sendall(text+'\r\n')
+
+            text_msg = text+'\r\n'
+            conn.sendall(text_msg.encode())
             if not IsPass:
-                print(text)
+                print("error: " + text)
                 return
-        print(username+' realy get in')
-        x = conn.recv(BUF_SIZE) #wait for client send command
-        if not x:
+
+        print(username+' got in')
+
+        client_msg = conn.recv(BUF_SIZE).decode() #wait for client send command
+        if not client_msg:
+            print("error - No msg received from client")
             conn.close()
             return
-        while x!='QUIT':
-            if x[:4]!='STAT' and x[:4]!='LIST' and x[:5]!='RETR ' and x[:5]!='DELE ':
-                conn.sendall('error command')
+
+        while client_msg!='QUIT':
+            if client_msg[:4]!='STAT' and client_msg[:4]!='LIST' and client_msg[:5]!='RETR ' and client_msg[:5]!='DELE ':
+
+                err_msg = 'error command'
+                conn.sendall(err_msg.encode())
                 conn.close()
                 return
-            if x[:4]=='STAT':
-                conn.sendall(self.stat(username))
-            if x[:4]=='LIST':
-                conn.sendall(self.List(username))
-            if x[:5]=='RETR ':
-                if(x>5):
-                    numMail=int(x[5:-2])
+            if client_msg[:4]=='STAT':
+                conn.sendall(self.stat(username).encode())
+            if client_msg[:4]=='LIST':
+                conn.sendall(self.List(username).encode())
+            if client_msg[:5]=='RETR ':
+                if(client_msg>5):
+                    numMail=int(client_msg[5:-2])
                 else:
                     numMail=0
-                conn.sendall(self.retr(username,numMail))
-            if x[:5]=='DELE ':
-                if(x>5):
-                    numMail=int(x[5:-2])
+                conn.sendall(self.retr(username,numMail).encode())
+            if client_msg[:5]=='DELE ':
+                if(client_msg>5):
+                    numMail=int(client_msg[5:-2])
                 else:
                     numMail=0
-                conn.sendall(self.deleteMail(username, numMail))
-            x = conn.recv(BUF_SIZE) #wait for client send command
-            if not x:
+                conn.sendall(self.deleteMail(username, numMail).encode())
+            client_msg = conn.recv(BUF_SIZE).decode() #wait for client send command
+            if not client_msg:
                 conn.close()
                 return
-        s.sendall('+OK POP3 server signing off\r\n')
+
+        ok_msg = '+OK POP3 server signing off\r\n'
+        conn.sendall(ok_msg.encode())
 
     def SaveMailInDominsBoxes(self, BodyMail, Domains):
         if not os.path.exists('mails'):
@@ -206,16 +252,16 @@ class ServerSMTP_and_POP3:
                     i+=1
                     MailName=str(i)+'.txt'
                     PathMail=directory+'\\'+MailName
-                f=open(PathMail,'wb')
+                f=open(PathMail,'w')
                 f.write(BodyMail)
                 f.close()
                 print('mail saved as: '+PathMail)
             else:
-                print('user domain not exist - so the mail not sent')
+                print('user domain not exist - so the mail did not send')
 
     def is_user_domain_exist_in_DB(self,UserName):
-        if os.path.exists('../users&passwords.txt'):
-            f=open('../users&passwords.txt', 'rb')
+        if os.path.exists(USERS_PASSWORDS_FILE):
+            f=open(USERS_PASSWORDS_FILE)
             d=ast.literal_eval(f.read()) #get all users
             print(d)
         else:
@@ -230,7 +276,7 @@ class ServerSMTP_and_POP3:
 
     def find_user_in_DB(self,username):
         if os.path.exists(USERS_PASSWORDS_FILE):
-            f=open(USERS_PASSWORDS_FILE,'rb')
+            f=open(USERS_PASSWORDS_FILE)
             d=ast.literal_eval(f.read())
             if username in d:
                 return '+OK User accepted',True
@@ -241,7 +287,7 @@ class ServerSMTP_and_POP3:
 
     def is_password(self,username,password):
         if os.path.exists(USERS_PASSWORDS_FILE):
-            f=open(USERS_PASSWORDS_FILE,'rb')
+            f=open(USERS_PASSWORDS_FILE)
             d=ast.literal_eval(f.read())
             if d[username]==password:
                 return '+OK Pass accepted',True
@@ -265,8 +311,6 @@ class ServerSMTP_and_POP3:
             for f in filenames:
                 fp = os.path.join(dirpath, f)
                 count+=1
-                #print 'old name: '+fp
-                #print 'new name: '+dirpath+'\\'+str(count)+'.txt'
                 os.rename(fp, dirpath+'\\'+str(count)+'.txt')
         return '+OK message '+str(numMail)+' deleted\r\n'
 
@@ -278,7 +322,7 @@ class ServerSMTP_and_POP3:
         if not os.path.isfile(TheFile):
             return '-ERR mail not found'
         size = os.path.getsize(TheFile)
-        f=open(TheFile,'rb')
+        f=open(TheFile)
         BodyMail=f.read()
         f.close()
         str1='+OK '+str(size)+' octets\r\n'

@@ -17,19 +17,19 @@ class Client:
         tkinter.Label(self.top, text="Created by Hagai Vinik (c) 2023").pack()
         tkinter.Label(self.top, text="").pack()
         tkinter.Label(self.top, text="Please choose: ").pack()
-        b1 = tkinter.Button(self.top, text="Sign in", bd=4, width=20, command=self.smtp).pack()
-        b2 = tkinter.Button(self.top, text="Sign up", bd=4, width=20, command=self.pop3).pack()
+        b1 = tkinter.Button(self.top, text="send mail", bd=4, width=20, command=self.smtp).pack()
+        b2 = tkinter.Button(self.top, text="open mailbox", bd=4, width=20, command=self.pop3).pack()
         b3 = tkinter.Button(self.top, text="Exit", bd=4, width=20, command=self.exit_app).pack()
 
         self.top.mainloop()
 
-    def sign_in(self):
+    def smtp(self):
         print("starting smtp client")
         self.top.destroy()
         hagaismtp.smtpclient()
 
 
-    def sign_up(self):
+    def pop3(self):
         print("starting pop3 client")
         self.top.destroy()
 
