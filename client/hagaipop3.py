@@ -14,172 +14,200 @@ class pop3client:
     def __init__(self):
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect(ADDR)
-        self.top2 = tkinter.Tk()
-        self.top2.title("hagai mail")
-        self.top2.geometry('400x200')
-        tkinter.Label(self.top2,text = "enter your username: ").grid(column=0,row = 0)
+
+        self.top = tkinter.Tk()
+        self.top.title("hagai mail")
+        self.top.geometry('400x200')
+        tkinter.Label(self.top, text ="enter your username: ").pack()
         self.username = tkinter.StringVar()
-        e1 =tkinter.Entry(self.top2,textvariable=self.username).grid(column=5,row=5)
-        b1 =tkinter.Button(self.top2,text = "enter",bd = 4,width = 4, command =self.start1).grid(column=6,row=5)
-        self.top2.mainloop()
+        e1 =tkinter.Entry(self.top, textvariable=self.username).pack()
+        b1 =tkinter.Button(self.top, text ="enter", bd = 4, width = 10, command =self.start).pack()
+        self.top.mainloop()
 
-    def start1(self):#login
-        self.s.sendall('USER '+str(self.username.get())+'\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            self.top2.destroy()
+    def start(self):#login
+
+        login_msg = 'USER '+str(self.username.get())+'\r\n'
+        self.s.sendall(login_msg.encode())
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            self.top.destroy()
             return
-        if Response[:3]!='+OK':
-            tkinter.messagebox.showerror("error","ERROR1:" + Response)
-            print('ERROR 1: '+Response)
-            self.top2.destroy()
+
+        if res[:3]!='+OK':
+            tkinter.messagebox.showerror("error","ERROR1:" + res)
+            print('ERROR 1: '+res)
+            self.top.destroy()
             return
+
         else:
-            self.top2.destroy()
-            self.top3 = tkinter.Tk()
-            self.top3.title("hagai mail")
-            self.top3.geometry('400x200')
-            tkinter.Label(self.top3,text = "enter your password: ").grid(column=0,row = 0)
+            self.top.destroy()
+            self.top = tkinter.Tk()
+            self.top.title("hagai mail")
+            self.top.geometry('400x200')
+            tkinter.Label(self.top, text ="enter your password: ").pack()
             self.password = tkinter.StringVar()
-            e2 =tkinter.Entry(self.top3,textvariable=self.password).grid(column=5,row=5)
-            c1 =tkinter.Button(self.top3,text = "enter",bd = 4,width = 4, command =self.start2).grid(column=6,row=5)
-            self.top3.mainloop()
-    def start2(self):#login password
-        self.s.sendall('PASS '+str(self.password.get())+'\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            self.top3.destroy()
-            return
-        if Response[:3]!='+OK':
-            tkinter.messagebox.showerror("error","ERROR2:" + Response)
-            print('ERROR 2: '+Response)
-            self.top3.destroy()
-            return
-        else:
-            self.top3.destroy()
-            self.menu1()
-        
-    def menu1(self):
-        self.top4 = tkinter.Tk()
-        self.top4.title("hagai mail")
-        self.top4.geometry('300x300')
-        c2 =tkinter.Button(self.top4,text = "status",bd = 5,width = 20, command = self.stats1).grid(column=18,row=3)
-        c3 =tkinter.Button(self.top4,text = "list of mails",bd = 5,width = 20, command = self.list1).grid(column=18,row=4)
-        c4 =tkinter.Button(self.top4,text = "read mail",bd = 5,width = 20, command = self.read1).grid(column=18,row=5)
-        c5 =tkinter.Button(self.top4,text = "delete mail",bd = 5,width = 20, command = self.delete1).grid(column=18,row=6)
-        c6 =tkinter.Button(self.top4,text = "quit",bd = 5,width = 20, command = self.quit1).grid(column=18,row=7)
+            e2 =tkinter.Entry(self.top, textvariable=self.password).pack()
+            c1 =tkinter.Button(self.top, text ="enter", bd = 4, width = 10, command =self.login).pack()
+            self.top.mainloop()
 
-    def stats1(self):
-        self.top4.destroy()
-        self.s.sendall('STAT\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            print("no connection")
-            self.menu1()
-        if Response[:3]!='+OK':
-            print('ERROR 4: '+Response)
-            tkinter.messagebox.showerror("error","ERROR4:" + Response)
-            self.menu1()    
+    def login(self):#login password
+
+        pass_msg = 'PASS '+str(self.password.get())+'\r\n'
+        self.s.sendall(pass_msg.encode())
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            self.top.destroy()
+            return
+
+        if res[:3]!='+OK':
+            tkinter.messagebox.showerror("error","received malformed message from server." + res)
+            print('ERROR 2: '+res)
+            self.top.destroy()
+            return
+
         else:
-            print(Response)
-            self.top5 = tkinter.Tk()
-            self.top5.title("hagai mail")
-            self.top5.geometry('400x400')
-            tkinter.Label(self.top5,text = ""+ Response).grid(column=0,row = 0)
-            d1 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=7)
+            self.top.destroy()
+            self.menu()
+        
+    def menu(self):
+        self.top = tkinter.Tk()
+        self.top.title("hagai mail")
+        self.top.geometry('300x300')
+        tkinter.Label(self.top, text="choose option: ").pack()
+        tkinter.Button(self.top, text ="status", bd = 5, width = 20, command = self.show_status).pack()
+        tkinter.Button(self.top, text ="list of mails", bd = 5, width = 20, command = self.show_list).pack()
+        tkinter.Button(self.top, text ="read mail", bd = 5, width = 20, command = self.read_mail).pack()
+        tkinter.Button(self.top, text ="delete mail", bd = 5, width = 20, command = self.delete_mail).pack()
+        tkinter.Button(self.top, text ="quit", bd = 5, width = 20, command = self.quit_app).pack()
+
+    def show_status(self):
+        self.top.destroy()
+
+        stat_msg = 'STAT\r\n'
+        self.s.sendall(stat_msg.encode())
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            print("no connection")
+            self.menu()
+        if res[:3]!='+OK':
+            print('ERROR 4: '+res)
+            tkinter.messagebox.showerror("error","ERROR4:" + res)
+            self.menu()
+        else:
+            print(res)
+            self.top = tkinter.Tk()
+            self.top.title("hagai mail")
+            self.top.geometry('400x400')
+            tkinter.Label(self.top, text ="" + res).pack()
+            d1 =tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.go_back_menu).pack()
             
 
-    def destroy5(self):
-        self.top5.destroy()
-        self.menu1()
+    def go_back_menu(self):
+        self.top.destroy()
+        self.menu()
         
-    def list1(self):
-        self.top4.destroy()
-        self.s.sendall('LIST\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            self.menu1()
-        if Response[:3]!='+OK':
-            print('ERROR 5: '+Response)
-            tkinter.messagebox.showerror("error","ERROR5:" + Response)
-            self.menu1()
-        else:
-            print(Response)
-            self.top5 = tkinter.Tk()
-            self.top5.title("hagai mail")
-            self.top5.geometry('400x400')
-            tkinter.Label(self.top5,text = ""+Response).grid(column=0,row = 0)
-            d2 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=7)
+    def show_list(self):
+        self.top.destroy()
 
-    def read1(self):
-        self.top4.destroy()
-        self.top5 = tkinter.Tk()
-        self.top5.title("hagai mail")
-        self.top5.geometry('600x600')
-        tkinter.Label(self.top5,text = "please enter the number of the email:").grid(column=0,row = 0)
+        list_msg = 'LIST\r\n'
+        self.s.sendall(list_msg.encode())
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            self.menu()
+        if res[:3]!='+OK':
+            print('ERROR 5: '+res)
+            tkinter.messagebox.showerror("error","ERROR5:" + res)
+            self.menu()
+
+        else:
+            print(res)
+            self.top = tkinter.Tk()
+            self.top.title("hagai mail")
+            self.top.geometry('400x400')
+            tkinter.Label(self.top, text ="number:      size:").pack()
+            tkinter.Label(self.top, text ="" + res.split(')')[1]).pack()
+            tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.go_back_menu).pack()
+
+    def read_mail(self):
+        self.top.destroy()
+        self.top = tkinter.Tk()
+        self.top.title("hagai mail")
+        self.top.geometry('600x600')
+        tkinter.Label(self.top, text ="please enter the number of the email:").pack()
         self.num = tkinter.StringVar()
-        e3 =tkinter.Entry(self.top5,textvariable=self.num).grid(column=5,row=5)
-        d3 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.read2).grid(column=18,row=7)
-        d7 =tkinter.Button(self.top5,text = "back",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=9)
+        e3 = tkinter.Entry(self.top, textvariable=self.num).pack()
+        d3 = tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.show_mail).pack()
+        d7 = tkinter.Button(self.top, text ="back", bd = 5, width = 20, command = self.go_back_menu).pack()
 
-    def read2(self):
-        self.s.sendall('RETR '+str(self.num.get())+'\r\n')
+    def show_mail(self):
+        retr_msg = 'RETR '+str(self.num.get())+'\r\n'
+        self.s.sendall(retr_msg.encode())
         
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            self.menu1()
-        if Response[:3]!='+OK':
-            print('ERROR 6: '+Response)
-            tkinter.messagebox.showerror("error","ERROR6:" + Response)
-            self.destroy5()
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            self.menu()
+        if res[:3]!='+OK':
+            print('ERROR 6: '+res)
+            tkinter.messagebox.showerror("error","ERROR6:" + res)
+            self.go_back_menu()
         else:
-            self.top5.destroy()
-            self.top5 = tkinter.Tk()
-            self.top5.title("hagai mail")
-            self.top5.geometry('600x600')
-            tkinter.Label(self.top5,text = ""+ Response).grid(column=0,row = 0)
-            d4 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=7)
+            self.top.destroy()
+            self.top = tkinter.Tk()
+            self.top.title("hagai mail")
+            self.top.geometry('600x600')
+            tkinter.Label(self.top, text ="" + res).pack()
+            d4 = tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.go_back_menu).pack()
  
-    def delete1(self):
-        self.top4.destroy()
-        self.top5 = tkinter.Tk()
-        self.top5.title("hagai mail")
-        self.top5.geometry('600x600')
-        tkinter.Label(self.top5,text = "please enter the number of the email:").grid(column=0,row = 0)
-        self.num2 = tkinter.StringVar()
-        e5 =tkinter.Entry(self.top5,textvariable=self.num2).grid(column=3,row=3)
-        d5 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.delete2).grid(column=18,row=7)
-        d6 =tkinter.Button(self.top5,text = "back",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=9)
-    def delete2(self):
-        nummail = self.num2.get()
-        print("nummail:" + nummail)
-         
-        self.s.sendall('DELE '+ nummail +'\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if not Response:
-            self.menu()            
-        if Response[:3]!='+OK':
-            print('ERROR 7: '+Response)
-            tkinter.messagebox.showerror("error","ERROR7:" + Response)
-            self.destroy5()
-        else:
-            self.top5.destroy()
-            self.top5 = tkinter.Tk()
-            self.top5.title("hagai mail")
-            self.top5.geometry('600x600')
-            tkinter.Label(self.top5,text = ""+ Response).grid(column=0,row = 0)
-            z1 =tkinter.Button(self.top5,text = "ok",bd = 5,width = 20, command = self.destroy5).grid(column=18,row=7)
+    def delete_mail(self):
+        self.top.destroy()
+        self.top = tkinter.Tk()
+        self.top.title("hagai mail")
+        self.top.geometry('600x600')
+        tkinter.Label(self.top, text ="please enter the number of the email:").pack()
+        self.num = tkinter.StringVar()
+        e5 = tkinter.Entry(self.top, textvariable=self.num).pack()
+        d5 = tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.on_delete).pack()
+        d6 = tkinter.Button(self.top, text ="back", bd = 5, width = 20, command = self.go_back_menu).pack()
 
-    def quit1(self):
-        self.s.sendall('QUIT\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        self.top4.destroy()
+    def on_delete(self):
+        nummail = self.num.get()
+        print("nummail:" + nummail)
+
+        dele_msg = 'DELE '+ nummail +'\r\n'
+        self.s.sendall(dele_msg.encode())
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if not res:
+            self.menu()
+
+        if res[:3]!='+OK':
+            print('ERROR 7: '+res)
+            tkinter.messagebox.showerror("error","ERROR7:" + res)
+            self.go_back_menu()
+        else:
+            self.top.destroy()
+            self.top = tkinter.Tk()
+            self.top.title("hagai mail")
+            self.top.geometry('600x600')
+            tkinter.Label(self.top, text ="" + res).pack()
+            z1 =tkinter.Button(self.top, text ="ok", bd = 5, width = 20, command = self.go_back_menu).pack()
+
+    def quit_app(self):
+        quit_msg = 'QUIT\r\n'
+        self.s.sendall(quit_msg.encode())
+
+        res=self.s.recv(BUF_SIZE).decode()
+        self.top.destroy()
         self.s.close()
         return
 
 
 if __name__ == '__main__':
-    audi = pop3client()
+    pop3client()
 
 
 

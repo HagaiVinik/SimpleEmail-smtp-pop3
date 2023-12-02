@@ -4,7 +4,7 @@ import sys
 import tkinter
 import shutil
 
-USERS_PASS_FILE = 'users&passwords.txt'
+USERS_PASS_FILE = "users&passwords.txt"
 
 
 

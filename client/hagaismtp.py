@@ -35,12 +35,29 @@ class smtpclient:
         self.top = tkinter.Tk()
         self.top.title("hagai mail")
         self.top.geometry('450x450')
-        tkinter.Label(self.top,text = "a new mail ? (yes/no) : ").grid(column=0,row = 0)
-        b =tkinter.Button(self.top, text = "yes", bd = 4, width = 8, command =self.start_msg).grid(column=5, row=5)
-        c =tkinter.Button(self.top, text = "no", bd = 4, width = 8, command = self.close_prog).grid(column=6, row=5)
+        tkinter.Label(self.top,text = "a new mail ? (yes/no) : ").pack()
+        b =tkinter.Button(self.top, text = "yes", bd = 4, width = 8, command =self.get_username).pack()
+        c =tkinter.Button(self.top, text = "no", bd = 4, width = 8, command = self.close_prog).pack()
+        self.top.mainloop()
+
+    def get_username(self):
+        self.top.destroy()
+
+        self.top = tkinter.Tk()
+        self.top.title("hagai mail")
+        self.top.geometry('450x450')
+        tkinter.Label(self.top, text="enter your name: ").pack()
+        self.username = tkinter.StringVar()
+        e1 = tkinter.Entry(self.top, textvariable=self.username).pack()
+        b = tkinter.Button(self.top, text="OK", bd=4, width=8, command=self.start_msg).pack()
+
         self.top.mainloop()
 
     def start_msg(self):
+
+        global USERNAME
+        USERNAME = str(self.username.get()) + '@127.0.0.1'
+
         ehlo_proto_msg = 'EHLO smtp.gmx.com\r\n'.encode()
         self.s.send(ehlo_proto_msg)
 
@@ -112,14 +129,14 @@ class smtpclient:
         self.top = tkinter.Tk()
         self.top.title("hagai mail")
         self.top.geometry('500x500')
-        tkinter.Label(self.top, text ="enter the details: ").grid(column=0, row = 0)
-        tkinter.Label(self.top, text ="subject: ").grid(column=0, row = 1)
-        tkinter.Label(self.top, text ="bodymail: ").grid(column=0, row = 2)
+        tkinter.Label(self.top, text ="enter the details: ").pack()
+        tkinter.Label(self.top, text ="subject: ").pack()
+        tkinter.Label(self.top, text ="bodymail: ").pack()
         self.subject1 = tkinter.StringVar()
         self.bodymail1 = tkinter.StringVar()
-        e2 =tkinter.Entry(self.top, textvariable=self.subject1, width = 40).grid(column=2, row=1)
-        e3 =tkinter.Entry(self.top, textvariable=self.bodymail1, width = 40).grid(column=2, row=2)
-        c2 =tkinter.Button(self.top, text ="enter", bd = 3, width = 5, command = self.on_send).grid(column=8, row=8)
+        e2 =tkinter.Entry(self.top, textvariable=self.subject1, width = 40).pack()
+        e3 =tkinter.Entry(self.top, textvariable=self.bodymail1, width = 40).pack()
+        c2 =tkinter.Button(self.top, text ="enter", bd = 3, width = 5, command = self.on_send).pack()
         self.top.mainloop()
 
     def sendto_domain(self):
@@ -143,10 +160,10 @@ class smtpclient:
         self.top2 = tkinter.Tk()
         self.top2.title("hagai mail")
         self.top2.geometry('500x500')
-        tkinter.Label(self.top2,text = "enter the domains adresses:  : ").grid(column=0,row = 0)
+        tkinter.Label(self.top2,text = "enter the domains adresses:  : ").pack()
         self.name = tkinter.StringVar()
-        e1 =tkinter.Entry(self.top2, textvariable=self.name).grid(column=5, row=5)
-        c1 =tkinter.Button(self.top2, text = "enter", bd = 4, width = 4, command =self.sendto_domain).grid(column=6, row=5)
+        e1 =tkinter.Entry(self.top2, textvariable=self.name).pack()
+        c1 =tkinter.Button(self.top2, text = "enter", bd = 4, width = 4, command =self.sendto_domain).pack()
         self.top2.mainloop()
 
 if __name__ == '__main__':
