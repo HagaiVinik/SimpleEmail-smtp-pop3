@@ -167,7 +167,7 @@ class smtpclient:
         self.top2.mainloop()
 
 if __name__ == '__main__':
-    bmw = smtpclient()
+    smtpclient()
 
     
 

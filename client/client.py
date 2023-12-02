@@ -9,6 +9,9 @@ class Client:
     def __init__(self):
         print("starting app")
 
+        self.main_menu()
+
+    def main_menu(self):
         self.top = tkinter.Tk()
 
         self.top.title("hagai mail")
@@ -26,15 +29,16 @@ class Client:
     def smtp(self):
         print("starting smtp client")
         self.top.destroy()
-        hagaismtp.smtpclient()
 
+        hagaismtp.smtpclient()
+        self.main_menu()
 
     def pop3(self):
         print("starting pop3 client")
         self.top.destroy()
 
         hagaipop3.pop3client()
-
+        self.main_menu()
 
     def exit_app(self):
         self.top.destroy()
