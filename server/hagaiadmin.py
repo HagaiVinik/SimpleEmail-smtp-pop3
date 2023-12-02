@@ -4,7 +4,7 @@ import sys
 import tkinter
 import shutil
 
-USERS_PASS_FILE = 'users&passwords.txt'
+USERS_PASS_FILE = '../users&passwords.txt'
 
 
 
@@ -164,14 +164,14 @@ class admin:
         self.top2.mainloop()
 
     def getDBfromfile(self):
-        if os.path.exists('users&passwords.txt'):
-            f=open('users&passwords.txt')
+        if os.path.exists('../users&passwords.txt'):
+            f=open('../users&passwords.txt')
             self.d=ast.literal_eval(f.read())
         else:
             self.d={}
 
     def saveDBtoFile(self):
-        f=open('users&passwords.txt','w')
+        f=open('../users&passwords.txt', 'w')
         f.write(str(self.d))
 
     def exit_prog(self):

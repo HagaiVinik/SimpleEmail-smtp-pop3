@@ -15,39 +15,45 @@ PASSWORD='1234'
 BUF_SIZE = 4096
 
 class smtpclient:
-
     def __init__(self):
+        print("starting smtp client")
+
         self.s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.connect(ADDR)
-        Response=self.s.recv(BUF_SIZE)
-        if Response[:3]!='220':
-            tkinter.messagebox.showerror("error","ERROR:" + Response)
-            print('ERROR 1: '+Response)
+        res = self.s.recv(BUF_SIZE).decode()
+        if res[:3]!='220':
+            tkinter.messagebox.showerror("error","ERROR:" + res)
+            print('ERROR 1: '+res)
             return
         self.top = tkinter.Tk()
         self.top.title("hagai mail")
-        self.top.geometry('300x300')
+        self.top.geometry('450x450')
         tkinter.Label(self.top,text = "a new mail ? (yes/no) : ").grid(column=0,row = 0)
-        b =tkinter.Button(self.top,text = "yes",bd = 4,width = 8, command =self.start1).grid(column=5,row=5)
-        c =tkinter.Button(self.top,text = "no",bd = 4,width = 8, command = self.close1).grid(column=6,row=5)
+        b =tkinter.Button(self.top, text = "yes", bd = 4, width = 8, command =self.start_msg).grid(column=5, row=5)
+        c =tkinter.Button(self.top, text = "no", bd = 4, width = 8, command = self.close_prog).grid(column=6, row=5)
         self.top.mainloop()
 
-    def start1 (self):
-        self.s.send('EHLO smtp.gmx.com\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if Response[:3]!='250':
-            tkinter.messagebox.showerror("error","ERROR 2:" + Response)
-            print('ERROR 2: '+Response)
+    def start_msg (self):
+        ehlo_proto_msg = 'EHLO smtp.gmx.com\r\n'.encode()
+        self.s.send(ehlo_proto_msg)
+
+        res = self.s.recv(BUF_SIZE).decode()
+        if res[:3]!='250':
+            tkinter.messagebox.showerror("error","ERROR 2:" + res)
+            print('ERROR 2: '+res)
             return
-        self.s.send('MAIL FROM:<'+USERNAME+'>\r\n')
-        Response=self.s.recv(BUF_SIZE)
-        if Response[:3]!='250':
-            tkinter.messagebox.showerror("error","ERROR 4:" + Response)
-            print('ERROR 4: '+Response)
+
+        mail_from_proto_msg = ('MAIL FROM:<'+USERNAME+'>\r\n').encode()
+        self.s.send(mail_from_proto_msg)
+
+        res=self.s.recv(BUF_SIZE).decode()
+        if res[:3]!='250':
+            tkinter.messagebox.showerror("error","ERROR 4:" + res)
+            print('ERROR 4: '+res)
             return
         self.domain()
     
-    def close1 (self):
+    def close_prog (self):
         self.s.close()
         self.top.destroy()
 
@@ -102,6 +108,7 @@ class smtpclient:
             return
         self.top2.destroy()
         self.start3()
+
     def domain(self):
         self.top.destroy()
         self.top2 = tkinter.Tk()

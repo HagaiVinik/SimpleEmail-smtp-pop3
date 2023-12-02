@@ -4,6 +4,7 @@ import ast #to convert string to dictionary
 import threading
 from threading import Thread
 
+
 HOST = '127.0.0.1'
 PORT_SMTP = 25
 PORT_POP3 = 110
@@ -11,21 +12,51 @@ ADDR_SMTP = (HOST, PORT_SMTP)
 ADDR_POP3 = (HOST, PORT_POP3)
 SERVERNAME='SN'
 BUF_SIZE = 4096
-USERS_PASSWORDS_FILE=r'd:\users&passwords.txt'
+USERS_PASSWORDS_FILE= r'../users&passwords.txt'
+
+
 class ServerSMTP_and_POP3:
     def __init__(self):
-        
+        self.running = True
+
         Thread(target = self.main_smtp).start()
         Thread(target = self.main_pop3).start()
-        
+
+    # ---------------------main-------------------------------------
+
+    def main_smtp(self):
+        s_smtp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s_smtp.bind(ADDR_SMTP)
+        s_smtp.listen(5)
+        print('Server is Running @', ADDR_SMTP)
+        while self.running:
+            conn, addr = s_smtp.accept()
+            Thread(target=self.handle_smtp_client, args=(conn, addr)).start()
+
+        s_smtp.close()
+
+    def main_pop3(self):
+        s_pop3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s_pop3.bind(ADDR_POP3)
+        s_pop3.listen(5)
+        print('Server is Running @', ADDR_POP3)
+        while self.running:
+            conn, addr = s_pop3.accept()
+            Thread(target=self.handle_pop3_client, args=(conn, addr)).start()
+
+        s_pop3.close()
+
     #--------------------smtp server functions---------------------
 
-    def send_by_smtp(self,s_smtp):
-        # wait for connection for the client
-        conn, addr = s_smtp.accept()
+    def handle_smtp_client(self, conn, addr):
+        Domains = []
 
-        conn.sendall('220 '+SERVERNAME+' ESMTP Postfix')
+        # wait for connection for the client
+        msg_to_all = '220 '+SERVERNAME+' ESMTP Postfix'
+        conn.sendall(msg_to_all.encode())
         request = conn.recv(BUF_SIZE)
+        request = request.decode()
+
         if not request:
             conn.close()
             return
@@ -46,10 +77,9 @@ class ServerSMTP_and_POP3:
         if not request:
             conn.close()
             return
-        Domains=[]
+
         if request[:9]=='RCPT TO:<':
             Domains=(request[9:-3]).split(',')
-            
             print('domains:',Domains)
             conn.sendall('250 OK')
             request = conn.recv(BUF_SIZE)
@@ -58,7 +88,7 @@ class ServerSMTP_and_POP3:
                 return
         if request[:4]!='DATA':
             conn.close()
-            return      
+            return
         conn.sendall('354 End data with <CR><LF>.<CR><LF>')                
         DATA = conn.recv(BUF_SIZE)
         if not DATA:
@@ -74,8 +104,8 @@ class ServerSMTP_and_POP3:
         print('-----The all mail: -----')
         print(BodyMail)
         print('------------------------')
-        self.SaveMailInDominsBoxes(BodyMail,Domains)
-        conn.sendall('250 Ok')                
+        self.SaveMailInDominsBoxes(BodyMail, Domains)
+        conn.sendall('250 Ok')
         request = conn.recv(BUF_SIZE)
         if not request:
             conn.close()
@@ -87,68 +117,9 @@ class ServerSMTP_and_POP3:
         # close the connection to the specific client
         conn.close()
 
-    def SaveMailInDominsBoxes(self,BodyMail,Domains):
-        if not os.path.exists('mails'):
-            os.makedirs('mails')
-        for D in Domains:
-            if self.is_user_domain_exist_in_DB(D):
-                directory='mails\\'+D
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
-                i=1
-                MailName=str(i)+'.txt'
-                PathMail=directory+'\\'+MailName
-                while os.path.isfile(PathMail):
-                    i+=1
-                    MailName=str(i)+'.txt'
-                    PathMail=directory+'\\'+MailName
-                f=open(PathMail,'wb')
-                f.write(BodyMail)
-                f.close()
-                print('mail saved as: '+PathMail)
-            else:
-                print('user domain not exist - so the mail not sent')
-
-    def is_user_domain_exist_in_DB(self,UserName):
-        if os.path.exists('users&passwords.txt'):
-            f=open('users&passwords.txt','rb')
-            d=ast.literal_eval(f.read()) #get all users
-            print(d)
-        else:
-            d={}
-        if UserName in d:
-            print('yes')
-            return True
-        print('no')
-        return False
-
-    #---------------------pop3 server functions--------------------
-
-    def find_user_in_DB(self,username):
-        if os.path.exists(USERS_PASSWORDS_FILE):
-            f=open(USERS_PASSWORDS_FILE,'rb')
-            d=ast.literal_eval(f.read())
-            if username in d:
-                return '+OK User accepted',True
-            else:
-                return 'user not found',False
-        else:
-            return 'error in DB',False
-
-    def is_password(self,username,password):
-        if os.path.exists(USERS_PASSWORDS_FILE):
-            f=open(USERS_PASSWORDS_FILE,'rb')
-            d=ast.literal_eval(f.read())
-            if d[username]==password:
-                return '+OK Pass accepted',True
-            else:
-                return '-ERR wrong password',False
-        else:
-            return '-ERR error in DB',False
-
-    def send_by_pop3(self,s_pop3):
+    def handle_pop3_client(self, conn, addr):
         # wait for connection for the client
-        conn, addr = s_pop3.accept()
+
         x = conn.recv(BUF_SIZE) #wait for client send username
         if not x:
             conn.close()
@@ -213,14 +184,73 @@ class ServerSMTP_and_POP3:
                     numMail=int(x[5:-2])
                 else:
                     numMail=0
-                conn.sendall(self.dele(username,numMail))
+                conn.sendall(self.deleteMail(username, numMail))
             x = conn.recv(BUF_SIZE) #wait for client send command
             if not x:
                 conn.close()
                 return
         s.sendall('+OK POP3 server signing off\r\n')
 
-    def dele(self,username,numMail):
+    def SaveMailInDominsBoxes(self, BodyMail, Domains):
+        if not os.path.exists('mails'):
+            os.makedirs('mails')
+        for D in Domains:
+            if self.is_user_domain_exist_in_DB(D):
+                directory='mails\\'+D
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                i=1
+                MailName=str(i)+'.txt'
+                PathMail=directory+'\\'+MailName
+                while os.path.isfile(PathMail):
+                    i+=1
+                    MailName=str(i)+'.txt'
+                    PathMail=directory+'\\'+MailName
+                f=open(PathMail,'wb')
+                f.write(BodyMail)
+                f.close()
+                print('mail saved as: '+PathMail)
+            else:
+                print('user domain not exist - so the mail not sent')
+
+    def is_user_domain_exist_in_DB(self,UserName):
+        if os.path.exists('../users&passwords.txt'):
+            f=open('../users&passwords.txt', 'rb')
+            d=ast.literal_eval(f.read()) #get all users
+            print(d)
+        else:
+            d={}
+        if UserName in d:
+            print('yes')
+            return True
+        print('no')
+        return False
+
+    #---------------------pop3 server functions--------------------
+
+    def find_user_in_DB(self,username):
+        if os.path.exists(USERS_PASSWORDS_FILE):
+            f=open(USERS_PASSWORDS_FILE,'rb')
+            d=ast.literal_eval(f.read())
+            if username in d:
+                return '+OK User accepted',True
+            else:
+                return 'user not found',False
+        else:
+            return 'error in DB',False
+
+    def is_password(self,username,password):
+        if os.path.exists(USERS_PASSWORDS_FILE):
+            f=open(USERS_PASSWORDS_FILE,'rb')
+            d=ast.literal_eval(f.read())
+            if d[username]==password:
+                return '+OK Pass accepted',True
+            else:
+                return '-ERR wrong password',False
+        else:
+            return '-ERR error in DB',False
+
+    def deleteMail(self, username, numMail):
         UserDirectory='mails\\'+username
         if not os.path.exists(UserDirectory):
             os.makedirs(UserDirectory)
@@ -288,25 +318,7 @@ class ServerSMTP_and_POP3:
                 total_size += os.path.getsize(fp)
         return '+OK '+str(count)+' '+str(total_size)+'\r\n'
 
-    #---------------------main-------------------------------------
 
-    def main_smtp(self):
-        s_smtp = socket.socket(socket.AF_INET,  socket.SOCK_STREAM)
-        s_smtp.bind(ADDR_SMTP)
-        s_smtp.listen(5)
-        print('Server is Running @', ADDR_SMTP)
-        while True:
-            self.send_by_smtp(s_smtp)
-        s_smtp.close()
-
-    def main_pop3(self):
-        s_pop3 = socket.socket(socket.AF_INET,  socket.SOCK_STREAM)
-        s_pop3.bind(ADDR_POP3)
-        s_pop3.listen(5)
-        print('Server is Running @', ADDR_POP3)
-        while True:
-            self.send_by_pop3(s_pop3)
-        s_pop3.close()
 
 if __name__=='__main__':
     ServerSMTP_and_POP3()
